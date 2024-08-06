@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, KeyboardEvent } from "react";
 
-const size = 6;
+const columns = 6;
+const rows = 5;
 
 const generateRandomCode = (length: number): number[] => {
   const code: number[] = [];
@@ -34,7 +35,7 @@ const Game: React.FC = () => {
             (circle.className = "circle w-20 h-20 rounded-full bg-gray-500")
         );
         for (let j = 0; j < 5; j++) {
-          const randomIndex = getRandomInt(size * size);
+          const randomIndex = getRandomInt(columns * rows);
           circles[randomIndex].className =
             "circle w-20 h-20 rounded-full bg-red-500";
         }
@@ -45,7 +46,7 @@ const Game: React.FC = () => {
   const flashFinalPattern = useCallback(() => {
     const newPattern: number[] = [];
     for (let i = 0; i < 5; i++) {
-      newPattern.push(getRandomInt(size * size));
+      newPattern.push(getRandomInt(columns * rows));
     }
     setFinalPattern(newPattern);
 
@@ -103,16 +104,16 @@ const Game: React.FC = () => {
 
           switch (key) {
             case "w":
-              if (newIndex - size >= 0) newIndex -= size;
+              if (newIndex - columns >= 0) newIndex -= columns;
               break;
             case "a":
-              if (newIndex % size !== 0) newIndex -= 1;
+              if (newIndex % columns !== 0) newIndex -= 1;
               break;
             case "s":
-              if (newIndex + size < size * size) newIndex += size;
+              if (newIndex + columns < columns * rows) newIndex += columns;
               break;
             case "d":
-              if (newIndex % size !== size - 1) newIndex += 1;
+              if (newIndex % columns !== columns - 1) newIndex += 1;
               break;
           }
 
@@ -139,40 +140,73 @@ const Game: React.FC = () => {
   }, [handleKeyDown]);
 
   return (
-    <div className="flex flex-row items-center justify-center h-screen bg-neutral-900">
-      <div className="flex flex-row items-center justify-center border-8 border-slate-100">
-        <div className="flex flex-col border-8 border-slate-200 items-center m-2">
-          <div className="grid grid-cols-6 gap-2 m-8">
-            {Array.from({ length: size * size }, (_, i) => (
-              <div
-                key={i}
-                className="circle w-20 h-20 rounded-full bg-gray-500"
-                id={`circle-${i}`}
-              ></div>
-            ))}
-          </div>
+    <div className=" h-screen bg-neutral-900 p-10">
+      <div className="flex flex-row border-8 items-center justify-center text-gray-200 m-2 p-4">
+        <div className="flex flex-col items-center text-gray-200 border-8 border-slate-100 p-4">
+          <h2 className="text-2xl font-bold">CONECTION : TIMEOUT</h2>
+          {/* todo add clock */}
         </div>
-        <div className="border-8 border-slate-100 text-gray-200  m-2">
-          <div className="flex flex-col items-center m-4">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold">LockPad</h2>
-              <div id="lockpad" className="text-xl">
-                {lockPadCode.join(" ")}
+        <div className="flex flex-col items-center text-gray-200 border-8 border-slate-100 p-4">
+          <h2 className="text-2xl font-bold">ACCESS ATTEMPTS</h2>
+          {/* add blocks */}
+        </div>
+      </div>
+      <div className="flex flex-row items-center justify-center">
+        <div className="flex flex-row items-center justify-center text-gray-200 border-8 border-slate-100 p-4">
+          <div className="flex flex-col border-8 border-slate-200 items-center m-2">
+            <h2 className="text-2xl font-bold">SIGNAL : RECEPTER</h2>
+            <div className="grid grid-cols-6 gap-2 m-8">
+              {Array.from({ length: columns * rows }, (_, i) => (
+                <div
+                  key={i}
+                  className="circle w-20 h-20 rounded-full bg-gray-500"
+                  id={`circle-${i}`}
+                ></div>
+              ))}
+            </div>
+            {/* scrample counter */}
+          </div>
+          <div className="border-8 border-slate-100 text-gray-200 m-2">
+            <div className="flex flex-col items-center m-4">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold">DECRYPTED DIGITS</h2>
+                <div id="lockpad" className="text-xl">
+                  {lockPadCode.join(" ")}
+                </div>
+              </div>
+              <div className="mt-4">
+                <div className="grid grid-cols-3 gap-2">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, "*", 0, "#"].map((num) => (
+                    <div className="border-2 border-slate-50">
+                      <button
+                        key={num}
+                        className="w-16 h-16 text-2xl text-gray-100 rounded-md"
+                      >
+                        {num}
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-            <div className="mt-4">
-              <div className="grid grid-cols-3 gap-2">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, "*", 0, "#"].map((num) => (
-                  <button
-                    key={num}
-                    className="w-16 h-16 text-2xl text-gray-50 bg-gradient-to-r from-gray-100 to-gray-200 opacity-20 rounded-md"
-                  >
-                    {num}
-                  </button>
-                ))}
+            <div className="flex flex-col items-center m-4">
+              <div className="mt-2">
+                <div className="border-2 border-slate-50 pt-6 pb-6 pr-2 pl-2">
+                  <div className="grid grid-cols-4 gap-2">
+                    {lockPadCode.map((num) => (
+                      <div className="border-2 border-slate-50">
+                        <button
+                          key={num}
+                          className="w-12 h-12 text-2xl text-gray-100 rounded-md"
+                        >
+                          {num}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="mt-4 text-lg">{status}</div>
           </div>
         </div>
       </div>
