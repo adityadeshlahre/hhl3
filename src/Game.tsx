@@ -27,6 +27,7 @@ const Game: React.FC = () => {
   const [highlightedCircle, setHighlightedCircle] = useState<number | null>(
     null
   );
+  const [correctCircles, setCorrectCircles] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     startGame();
@@ -34,10 +35,21 @@ const Game: React.FC = () => {
 
   const clearCanvas = () => {
     const circles = document.querySelectorAll(".circle");
-    circles.forEach(
-      (circle) =>
-        (circle.className = "circle w-20 h-20 rounded-full bg-gray-500")
-    );
+    circles.forEach((circle) => {
+      const circleId = parseInt(circle.id.split("-")[1], 10);
+      if (!correctCircles.has(circleId)) {
+        circle.className = "circle w-20 h-20 rounded-full bg-gray-500";
+      }
+    });
+
+    finalPattern.forEach((pattern) => {
+      pattern.forEach((circleId) => {
+        const circle = document.getElementById(`circle-${circleId}`);
+        if (circle && correctCircles.has(circleId)) {
+          circle.className = "circle w-20 h-20 rounded-full bg-blue-500";
+        }
+      });
+    });
   };
 
   const flashRandomCircles = useCallback(() => {
@@ -59,7 +71,7 @@ const Game: React.FC = () => {
         }
       }, i * 1000);
     }
-  }, []);
+  }, [finalPattern, correctCircles]);
 
   const flashFinalPattern = useCallback(() => {
     const newPattern: number[][] = Array.from({ length: columns }, () => []);
@@ -87,7 +99,7 @@ const Game: React.FC = () => {
       clearCanvas();
       setStatus("ENTER THE PATTERN USING 'W' , 'S' , & 'Enter'.......!");
     }, 3000);
-  }, []);
+  }, [correctCircles]);
 
   const startGame = useCallback(() => {
     flashRandomCircles();
@@ -96,20 +108,25 @@ const Game: React.FC = () => {
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
-      console.log(event);
       if (status.includes("ENTER THE PATTERN")) {
         const key = event.key.toLowerCase();
-        const currentCircle = document.getElementById(
-          `circle-${finalPattern[currentColumn][0]}`
-        );
+        // const currentCircle = document.getElementById(
+        //   `circle-${finalPattern[currentColumn][0]}`
+        // );
 
         if (key === "enter") {
           if (
             userPattern[currentColumn][0] === finalPattern[currentColumn][0]
           ) {
-            if (currentCircle)
-              currentCircle.className =
-                "circle w-20 h-20 rounded-full bg-blue-500";
+            setCorrectCircles((prev) => {
+              const newCorrectCircles = new Set(prev);
+              newCorrectCircles.add(userPattern[currentColumn][0]);
+              return newCorrectCircles;
+            });
+
+            // if (currentCircle)
+            //   currentCircle.className =
+            //     "circle w-20 h-20 rounded-full bg-blue-500";
             setCurrentColumn((prev: number) => prev + 1);
 
             if (currentColumn === finalPattern.length - 1) {
@@ -121,6 +138,7 @@ const Game: React.FC = () => {
                 setRounds((prev: number) => prev + 1);
                 setCurrentColumn(0);
                 setUserPattern(Array.from({ length: columns }, () => []));
+                setCorrectCircles(new Set());
               }
             }
           } else {
@@ -135,19 +153,31 @@ const Game: React.FC = () => {
               setRounds((prev: number) => prev + 1);
               setCurrentColumn(0);
               setUserPattern(Array.from({ length: columns }, () => []));
-            }, 10000);
+              setCorrectCircles(new Set());
+            }, 5000);
           }
-        } else {
+        } else if (key === "w" || key === "s") {
           const updateUserPattern = [...userPattern];
           let newIndex =
-            userPattern[currentColumn][0] || finalPattern[currentColumn][0];
+            userPattern[currentColumn][0] || currentColumn * columns;
+          // let newIndex = userPattern[currentColumn][0];
+          // let newIndex = userPattern[currentColumn][0] || finalPattern[currentColumn][0];
+          // let newIndex = currentColumn;
 
           switch (key) {
             case "w":
-              if (newIndex - columns >= 0) newIndex -= columns;
+              if (userPattern[currentColumn].length === 0) {
+                newIndex = currentColumn;
+              } else if (newIndex - columns >= 0) {
+                newIndex -= columns;
+              }
               break;
             case "s":
-              if (newIndex + columns < columns * rows) newIndex += columns;
+              if (userPattern[currentColumn].length === 0) {
+                newIndex = currentColumn;
+              } else if (newIndex + columns < columns * rows) {
+                newIndex += columns;
+              }
               break;
           }
 
@@ -183,11 +213,6 @@ const Game: React.FC = () => {
     };
   }, [handleKeyDown]);
 
-  useEffect(() => {
-    console.log("Final Pattern:", finalPattern);
-    console.log("User Pattern:", userPattern);
-  }, [finalPattern, userPattern]);
-
   return (
     <div className=" h-screen bg-neutral-950 p-10">
       <h3 className="text-gray-200">{status}</h3>
@@ -205,14 +230,16 @@ const Game: React.FC = () => {
         <div className="flex flex-row items-center justify-center text-gray-200 border-4 border-slate-100 p-4">
           <div className="flex flex-col border-4 border-slate-200 items-center m-2">
             <h2 className="text-2xl font-bold">SIGNAL : RECEPTER</h2>
-            <div className="grid grid-cols-6 gap-2 m-8">
-              {Array.from({ length: columns * rows }, (_, i) => (
-                <div
-                  key={i}
-                  className="circle w-20 h-20 rounded-full bg-gray-500"
-                  id={`circle-${i}`}
-                ></div>
-              ))}
+            <div className="grid grid-cols-6 grid-rows-5 gap-2 m-8">
+              {Array.from({ length: columns * rows }, (_, i) => {
+                const isCorrect = correctCircles.has(i);
+                const className = `circle w-20 h-20 rounded-full ${
+                  isCorrect ? "bg-blue-500" : "bg-gray-500"
+                }`;
+                return (
+                  <div key={i} className={className} id={`circle-${i}`}></div>
+                );
+              })}
             </div>
             {/* scrample counter */}
           </div>
