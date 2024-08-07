@@ -15,6 +15,10 @@ const getRandomInt = (max: number): number => Math.floor(Math.random() * max);
 const lockPadCode: number[] = generateRandomCode(4);
 
 const Game: React.FC = () => {
+  const [revealedNumbers, setRevealedNumbers] = useState<Set<string | number>>(
+    new Set()
+  );
+  const [lockPadCodeShow, setLockPadCodeShow] = useState<number[]>([]);
   const [finalPattern, setFinalPattern] = useState<number[][]>([]);
   const [userPattern, setUserPattern] = useState<number[][]>(
     Array.from({ length: columns }, () => [])
@@ -110,9 +114,6 @@ const Game: React.FC = () => {
     (event: KeyboardEvent) => {
       if (status.includes("ENTER THE PATTERN")) {
         const key = event.key.toLowerCase();
-        // const currentCircle = document.getElementById(
-        //   `circle-${finalPattern[currentColumn][0]}`
-        // );
 
         if (key === "enter") {
           if (
@@ -123,14 +124,13 @@ const Game: React.FC = () => {
               newCorrectCircles.add(userPattern[currentColumn][0]);
               return newCorrectCircles;
             });
-
-            // if (currentCircle)
-            //   currentCircle.className =
-            //     "circle w-20 h-20 rounded-full bg-blue-500";
             setCurrentColumn((prev: number) => prev + 1);
 
             if (currentColumn === finalPattern.length - 1) {
+              const revealedDigit = lockPadCode[0];
               lockPadCode.shift();
+              setLockPadCodeShow((prev) => [...prev, lockPadCodeShow.length]);
+              setRevealedNumbers((prev) => new Set(prev).add(revealedDigit));
               if (lockPadCode.length === 0) {
                 setStatus("HACK SUCCESSFUL!!");
               } else {
@@ -162,7 +162,6 @@ const Game: React.FC = () => {
             userPattern[currentColumn][0] || currentColumn * columns;
           // let newIndex = userPattern[currentColumn][0];
           // let newIndex = userPattern[currentColumn][0] || finalPattern[currentColumn][0];
-          // let newIndex = currentColumn;
 
           switch (key) {
             case "w":
@@ -188,7 +187,7 @@ const Game: React.FC = () => {
             const previousCircle = document.getElementById(
               `circle-${highlightedCircle}`
             );
-            if (previousCircle)
+            if (previousCircle && !correctCircles.has(highlightedCircle))
               previousCircle.className =
                 "circle w-20 h-20 rounded-full bg-gray-500";
           }
@@ -200,7 +199,14 @@ const Game: React.FC = () => {
         }
       }
     },
-    [status, finalPattern, currentColumn, userPattern, highlightedCircle]
+    [
+      status,
+      finalPattern,
+      currentColumn,
+      userPattern,
+      highlightedCircle,
+      correctCircles,
+    ]
   );
 
   useEffect(() => {
@@ -214,11 +220,11 @@ const Game: React.FC = () => {
   }, [handleKeyDown]);
 
   return (
-    <div className=" h-screen bg-neutral-950 p-10">
+    <div className=" h-screen bg-gray-950 p-10">
       <h3 className="text-gray-200">{status}</h3>
       <div className="flex flex-row border-4 justify-center  text-gray-200 m-2 p-4">
         <div className="flex flex-col items-center text-gray-200 border-4 border-slate-100 p-4">
-          <h2 className="text-2xl font-bold">CONECTION : TIMEOUT</h2>
+          <h2 className="text-2xl font-bold">CONECTION TIMEOUT</h2>
           {/* todo add clock */}
         </div>
         <div className="flex flex-col items-center text-gray-200 border-4 border-slate-100 p-4">
@@ -229,7 +235,7 @@ const Game: React.FC = () => {
       <div className="flex flex-row justify-center">
         <div className="flex flex-row items-center justify-center text-gray-200 border-4 border-slate-100 p-4">
           <div className="flex flex-col border-4 border-slate-200 items-center m-2">
-            <h2 className="text-2xl font-bold">SIGNAL : RECEPTER</h2>
+            <h2 className="text-2xl font-bold">SIGNAL RECEPTER</h2>
             <div className="grid grid-cols-6 grid-rows-5 gap-2 m-8">
               {Array.from({ length: columns * rows }, (_, i) => {
                 const isCorrect = correctCircles.has(i);
@@ -247,17 +253,20 @@ const Game: React.FC = () => {
             <div className="flex flex-col items-center m-4">
               <div className="text-center">
                 <h2 className="text-2xl font-bold">DECRYPTED DIGITS</h2>
-                <div id="lockpad" className="text-xl">
-                  {lockPadCode.join(" ")}
-                </div>
+                {/* <div id="lockpad" className="text-xl">
+                  {lockPadCodeShow.join(" ")}
+                </div> */}
               </div>
               <div className="mt-4">
                 <div className="grid grid-cols-3 gap-2">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, "*", 0, "#"].map((num) => (
-                    <div className="border-2 border-slate-50">
+                    <div className="border-2 border-slate-50" key={num}>
                       <button
-                        key={num}
-                        className="w-16 h-16 text-2xl text-gray-100 rounded-md"
+                        className={`w-16 h-16 text-2xl ${
+                          revealedNumbers.has(num)
+                            ? "bg-gray-200 text-gray-950"
+                            : "bg-gray-950 text-gray-100"
+                        }`}
                       >
                         {num}
                       </button>
@@ -270,11 +279,11 @@ const Game: React.FC = () => {
               <div className="mt-2">
                 <div className="border-2 border-slate-50 pt-6 pb-6 pr-2 pl-2">
                   <div className="grid grid-cols-4 gap-2">
-                    {lockPadCode.map((num) => (
+                    {lockPadCodeShow.map((num) => (
                       <div className="border-2 border-slate-50">
                         <button
                           key={num}
-                          className="w-12 h-12 text-2xl text-gray-100 rounded-md"
+                          className="w-12 h-12 text-2xl bg-gray-200 text-gray-950"
                         >
                           {num}
                         </button>
