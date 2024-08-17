@@ -32,6 +32,8 @@ const Game: React.FC = () => {
     null
   );
   const [correctCircles, setCorrectCircles] = useState<Set<number>>(new Set());
+  const [wrongCircles, setWrongCircles] = useState<Set<number>>(new Set());
+  const [attempts, setAttempts] = useState<number>(rounds + 1);
 
   useEffect(() => {
     startGame();
@@ -54,6 +56,13 @@ const Game: React.FC = () => {
         }
       });
     });
+
+    wrongCircles.forEach((circleId) => {
+      const circle = document.getElementById(`circle-${circleId}`);
+      if (circle) {
+        circle.className = "circle w-20 h-20 rounded-full bg-red-500";
+      }
+    });
   };
 
   const flashRandomCircles = useCallback(() => {
@@ -75,7 +84,7 @@ const Game: React.FC = () => {
         }
       }, i * 1000);
     }
-  }, [finalPattern, correctCircles]);
+  }, [finalPattern, correctCircles, wrongCircles]);
 
   const flashFinalPattern = useCallback(() => {
     const newPattern: number[][] = Array.from({ length: columns }, () => []);
@@ -103,9 +112,10 @@ const Game: React.FC = () => {
       clearCanvas();
       setStatus("ENTER THE PATTERN USING 'W' , 'S' , & 'Enter'.......!");
     }, 3000);
-  }, [correctCircles]);
+  }, [correctCircles, wrongCircles]);
 
   const startGame = useCallback(() => {
+    setAttempts(rounds + 2);
     flashRandomCircles();
     setTimeout(flashFinalPattern, 6000);
   }, [flashFinalPattern, flashRandomCircles]);
@@ -129,7 +139,8 @@ const Game: React.FC = () => {
             if (currentColumn === finalPattern.length - 1) {
               const revealedDigit = lockPadCode[0];
               lockPadCode.shift();
-              setLockPadCodeShow((prev) => [...prev, lockPadCodeShow.length]);
+              // setLockPadCodeShow((prev) => [...prev, lockPadCodeShow.length]);
+              setLockPadCodeShow((prev) => [...prev, revealedDigit]);
               setRevealedNumbers((prev) => new Set(prev).add(revealedDigit));
               if (lockPadCode.length === 0) {
                 setStatus("HACK SUCCESSFUL!!");
@@ -139,21 +150,40 @@ const Game: React.FC = () => {
                 setCurrentColumn(0);
                 setUserPattern(Array.from({ length: columns }, () => []));
                 setCorrectCircles(new Set());
+                setAttempts(rounds + 2);
               }
             }
           } else {
-            setStatus("HACK FAILED!!");
+            const wrongCircleId = userPattern[currentColumn][0];
             const selectedCircle = document.getElementById(
               `circle-${userPattern[currentColumn][0]}`
             );
-            if (selectedCircle)
-              selectedCircle.className =
-                "circle w-20 h-20 rounded-full bg-red-500";
+
+            if (attempts > 0) {
+              if (selectedCircle)
+                selectedCircle.className =
+                  "circle w-20 h-20 rounded-full bg-orange-500";
+
+              setWrongCircles((prev) => new Set(prev).add(wrongCircleId));
+              setAttempts((prev) => prev - 1);
+            } else {
+              if (selectedCircle)
+                selectedCircle.className =
+                  "circle w-20 h-20 rounded-full bg-red-500";
+
+              setWrongCircles((prev) => new Set(prev).add(wrongCircleId));
+              setStatus("HACK FAILED!!");
+              // setStatus("GAME OVER!! TOO MANY FAILED ATTEMPTS!!");
+            }
+
             setTimeout(() => {
+              clearCanvas();
               setRounds((prev: number) => prev + 1);
               setCurrentColumn(0);
               setUserPattern(Array.from({ length: columns }, () => []));
               setCorrectCircles(new Set());
+              setWrongCircles(new Set());
+              setAttempts(rounds + 2);
             }, 5000);
           }
         } else if (key === "w" || key === "s") {
@@ -187,7 +217,11 @@ const Game: React.FC = () => {
             const previousCircle = document.getElementById(
               `circle-${highlightedCircle}`
             );
-            if (previousCircle && !correctCircles.has(highlightedCircle))
+            if (
+              previousCircle &&
+              !correctCircles.has(highlightedCircle) &&
+              !wrongCircles.has(highlightedCircle)
+            )
               previousCircle.className =
                 "circle w-20 h-20 rounded-full bg-gray-500";
           }
@@ -206,6 +240,11 @@ const Game: React.FC = () => {
       userPattern,
       highlightedCircle,
       correctCircles,
+      wrongCircles,
+      flashFinalPattern,
+      flashRandomCircles,
+      startGame,
+      attempts,
     ]
   );
 
@@ -229,7 +268,14 @@ const Game: React.FC = () => {
         </div>
         <div className="flex flex-col items-center text-gray-200 border-4 border-slate-100 p-4">
           <h2 className="text-2xl font-bold">ACCESS ATTEMPTS</h2>
-          {/* add blocks */}
+          <div className="flex flex-row space-x-2 mt-4">
+            {Array.from({ length: attempts }).map((_, index) => (
+              <div
+                key={index}
+                className="w-12 h-12 text-2xl bg-red-600 border-2 border-slate-50"
+              ></div>
+            ))}
+          </div>
         </div>
       </div>
       <div className="flex flex-row justify-center">
