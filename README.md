@@ -4,8 +4,8 @@
 
 ### Trying to replicate the code functions
 
-<summary>
-<details># React + TypeScript + Vite</details>
+<details>
+<summary># React + TypeScript + Vite</summary>
 
 ````markdown
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
@@ -41,4 +41,4 @@ export default {
 
 ```
 
-</summary>
+</details>

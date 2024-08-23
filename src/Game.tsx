@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, KeyboardEvent } from "react";
 
 const columns = 6;
 const rows = 5;
+const numberPad = [1, 2, 3, 4, 5, 6, 7, 8, 9, "*", "0", "#"];
 
 const generateRandomCode = (length: number): number[] => {
   const code: number[] = [];
@@ -34,6 +35,7 @@ const Game: React.FC = () => {
   const [correctCircles, setCorrectCircles] = useState<Set<number>>(new Set());
   const [wrongCircles, setWrongCircles] = useState<Set<number>>(new Set());
   const [attempts, setAttempts] = useState<number>(rounds + 1);
+  const [timeLeft, setTimeLeft] = useState<number>(150);
 
   useEffect(() => {
     startGame();
@@ -110,20 +112,33 @@ const Game: React.FC = () => {
 
     setTimeout(() => {
       clearCanvas();
-      setStatus("ENTER THE PATTERN USING 'W' , 'S' , & 'Enter'.......!");
+      setStatus("ENTER THE PATTERN USING 'W' , 'S'  & 'Enter'.......!");
     }, 3000);
   }, [correctCircles, wrongCircles]);
 
   const startGame = useCallback(() => {
     setAttempts(rounds + 2);
+    setTimeLeft(150);
     flashRandomCircles();
     setTimeout(flashFinalPattern, 6000);
-  }, [flashFinalPattern, flashRandomCircles]);
+  }, [flashFinalPattern, flashRandomCircles, rounds]);
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${minutes.toString().padStart(2, "0")} : ${secs
+      .toString()
+      .padStart(2, "0")}`;
+  };
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
       if (status.includes("ENTER THE PATTERN")) {
         const key = event.key.toLowerCase();
+
+        if (status === "HACK FAILED!!") {
+          return;
+        }
 
         if (key === "enter") {
           if (
@@ -258,29 +273,49 @@ const Game: React.FC = () => {
     };
   }, [handleKeyDown]);
 
+  useEffect(() => {
+    if (status.includes("STARTING") || status.includes("HACK SUCCESSFUL"))
+      return;
+
+    if (timeLeft <= 0) {
+      setStatus("HACK FAILED!!");
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft((prevTime) => prevTime - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft, status]);
+
   return (
-    <div className=" h-screen bg-gray-950 p-10">
-      <h3 className="text-gray-200">{status}</h3>
-      <div className="flex flex-row border-4 justify-center  text-gray-200 m-2 p-4">
-        <div className="flex flex-col items-center text-gray-200 border-4 border-slate-100 p-4">
-          <h2 className="text-2xl font-bold">CONECTION TIMEOUT</h2>
-          {/* todo add clock */}
-        </div>
-        <div className="flex flex-col items-center text-gray-200 border-4 border-slate-100 p-4">
-          <h2 className="text-2xl font-bold">ACCESS ATTEMPTS</h2>
-          <div className="flex flex-row space-x-2 mt-4">
-            {Array.from({ length: attempts }).map((_, index) => (
-              <div
-                key={index}
-                className="w-12 h-12 text-2xl bg-red-600 border-2 border-slate-50"
-              ></div>
-            ))}
+    <div className="h-screen bg-gray-950 p-10">
+      <div className="flex justify-center">
+        <h1 className=" text-4xl font-bold text-gray-300">{status}</h1>
+      </div>
+      <div className="flex flex-row justify-center">
+        <div className="flex flex-row gap-2 border-4 border-slate-500 justify-center text-gray-300 m-2 p-4">
+          <div className="flex flex-col items-center text-gray-300 border-4 border-slate-500 p-4">
+            <h2 className="text-2xl font-bold">CONECTION TIMEOUT</h2>
+            <div className="text-4xl mt-4">{formatTime(timeLeft)}</div>
+          </div>
+          <div className="flex flex-col items-center text-gray-300 border-4 border-slate-500 p-4">
+            <h2 className="text-2xl font-bold">ACCESS ATTEMPTS</h2>
+            <div className="flex flex-row space-x-2 mt-4">
+              {Array.from({ length: attempts }).map((_, index) => (
+                <div
+                  key={index}
+                  className="flex justify-center items-center w-12 h-12 text-2xl bg-red-600 border-2 border-slate-50"
+                ></div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
       <div className="flex flex-row justify-center">
-        <div className="flex flex-row items-center justify-center text-gray-200 border-4 border-slate-100 p-4">
-          <div className="flex flex-col border-4 border-slate-200 items-center m-2">
+        <div className="flex flex-row items-center justify-center text-gray-300 border-4 border-slate-500 p-4">
+          <div className="flex flex-col border-4 border-slate-500 items-center m-2">
             <h2 className="text-2xl font-bold">SIGNAL RECEPTER</h2>
             <div className="grid grid-cols-6 grid-rows-5 gap-2 m-8">
               {Array.from({ length: columns * rows }, (_, i) => {
@@ -295,7 +330,7 @@ const Game: React.FC = () => {
             </div>
             {/* scrample counter */}
           </div>
-          <div className="border-4 border-slate-100 text-gray-200 m-2">
+          <div className="border-4 border-slate-500 text-gray-300 m-2">
             <div className="flex flex-col items-center m-4">
               <div className="text-center">
                 <h2 className="text-2xl font-bold">DECRYPTED DIGITS</h2>
@@ -305,7 +340,7 @@ const Game: React.FC = () => {
               </div>
               <div className="mt-4">
                 <div className="grid grid-cols-3 gap-2">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, "*", 0, "#"].map((num) => (
+                  {numberPad.map((num) => (
                     <div className="border-2 border-slate-50" key={num}>
                       <button
                         className={`w-16 h-16 text-2xl ${
